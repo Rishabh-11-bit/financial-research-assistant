@@ -43,7 +43,7 @@ Return ONLY the JSON object. No markdown fences, no extra text.
 
 
 def verifier_node(state: AgentState) -> AgentState:
-    llm = get_llm(temperature=0.0)
+    llm = get_llm(temperature=0.0, json_mode=True)
     draft = state.get("draft_answer", "")
     docs = state.get("retrieved_docs", [])
     context = format_docs(docs)
@@ -57,7 +57,9 @@ def verifier_node(state: AgentState) -> AgentState:
     ])
 
     try:
-        result = json.loads(response.content)
+        # small local models often wrap the JSON in prose or ``` fences — take the outer object
+        raw = response.content
+        result = json.loads(raw[raw.index("{"): raw.rindex("}") + 1])
         is_grounded = bool(result.get("is_grounded", False))
         unsupported = result.get("unsupported_claims", [])
         explanation = result.get("explanation", "")

@@ -40,7 +40,8 @@ class Settings(BaseModel):
     log_level: str = Field(default_factory=lambda: os.getenv("LOG_LEVEL", "INFO"))
 
     # Retrieval
-    retrieval_k: int = 6
+    # lower RETRIEVAL_K for small local models so the prompt fits their context window
+    retrieval_k: int = Field(default_factory=lambda: int(os.getenv("RETRIEVAL_K", "6")))
     chunk_size: int = 1024
     chunk_overlap: int = 128
 

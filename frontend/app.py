@@ -78,7 +78,7 @@ if st.button("🔍 Research", use_container_width=True, type="primary"):
                 resp = httpx.post(
                     f"{api_url}/query",
                     json={"query": query},
-                    timeout=180,
+                    timeout=600,  # local Ollama on CPU can take several minutes
                 )
             except Exception as e:
                 st.error(f"Could not reach API: {e}")

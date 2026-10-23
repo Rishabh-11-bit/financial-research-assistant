@@ -34,3 +34,7 @@ class AgentState(TypedDict):
 
     # Optional: live market data fetched by analyst
     market_data: dict
+
+    # Analyst re-draft counter — must be declared here or LangGraph drops it between
+    # nodes and the verifier→analyst retry loop never terminates
+    _retries: int

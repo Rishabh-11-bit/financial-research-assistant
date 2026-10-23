@@ -4,12 +4,11 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import (
-    DirectoryLoader,
+    BSHTMLLoader,
     PyPDFLoader,
     TextLoader,
-    UnstructuredHTMLLoader,
 )
 from langchain_core.documents import Document
 
@@ -23,17 +22,22 @@ def _loader_cls(path: Path):
     if suffix == ".pdf":
         return PyPDFLoader
     if suffix in {".htm", ".html"}:
-        return UnstructuredHTMLLoader
+        return BSHTMLLoader
     return TextLoader
 
 
 def load_documents(source_dir: Path) -> list[Document]:
     docs: list[Document] = []
     for fpath in source_dir.rglob("*"):
+        # full-submission.txt is raw EDGAR SGML (embedded HTML + encoded exhibits); the
+        # primary-document.html next to it holds the same filing as clean text
+        if fpath.name == "full-submission.txt" and any(fpath.parent.glob("primary-document.*")):
+            continue
         if fpath.is_file() and fpath.suffix.lower() in {".pdf", ".htm", ".html", ".txt"}:
             try:
                 loader_cls = _loader_cls(fpath)
-                loader = loader_cls(str(fpath))
+                kwargs = {"open_encoding": "utf-8"} if loader_cls is BSHTMLLoader else {}
+                loader = loader_cls(str(fpath), **kwargs)
                 loaded = loader.load()
                 for doc in loaded:
                     doc.metadata.setdefault("source", str(fpath))

@@ -6,7 +6,7 @@ from langchain_core.language_models import BaseChatModel
 from src.config import get_settings
 
 
-def get_llm(temperature: float = 0.0) -> BaseChatModel:
+def get_llm(temperature: float = 0.0, json_mode: bool = False) -> BaseChatModel:
     cfg = get_settings()
 
     if cfg.llm_provider == "ollama":
@@ -15,6 +15,8 @@ def get_llm(temperature: float = 0.0) -> BaseChatModel:
             model=cfg.ollama_model,
             base_url=cfg.ollama_base_url,
             temperature=temperature,
+            # constrained decoding — small local models otherwise drift out of JSON
+            format="json" if json_mode else None,
         )
 
     if cfg.llm_provider == "openai":

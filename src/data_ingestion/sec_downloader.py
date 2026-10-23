@@ -23,13 +23,17 @@ def download_filings(
     output_dir = output_dir or (Path(cfg.vector_store_path).parent / "raw")
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    dl = Downloader(company_name="FinancialResearchBot", email_address=cfg.sec_user_agent, save_dir=str(output_dir))
+    # sec-edgar-downloader v5 wants a bare email; SEC_USER_AGENT is "Name email"
+    email = next((t for t in cfg.sec_user_agent.split() if "@" in t), "research@example.com")
+    dl = Downloader(company_name="FinancialResearchBot", email_address=email, download_folder=str(output_dir))
 
     for ftype in filing_types:
         logger.info("Downloading %s %s filings for %s", num_filings, ftype, ticker)
         try:
-            dl.get(ftype, ticker, limit=num_filings)
+            # download_details saves the clean primary HTML document alongside the raw SGML
+            dl.get(ftype, ticker, limit=num_filings, download_details=True)
         except Exception as exc:
             logger.warning("Could not download %s for %s: %s", ftype, ticker, exc)
 
-    return output_dir
+    # return only this ticker's folder so multi-ticker runs don't re-load earlier tickers
+    return output_dir / "sec-edgar-filings" / ticker
